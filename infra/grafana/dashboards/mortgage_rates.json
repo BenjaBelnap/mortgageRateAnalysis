@@ -34,8 +34,8 @@
     {
       "id": 3,
       "type": "barchart",
-      "title": "Latest rate by loan type and lender",
-      "description": "Most recent observed_date only. One bar group per loan type, one bar per lender.",
+      "title": "Latest APR by loan type and lender",
+      "description": "APR, not the headline rate, since it folds in lender fees and is the more comparable figure across lenders. Most recent observed_date only. One bar group per loan type, one bar per lender.",
       "gridPos": { "h": 11, "w": 24, "x": 0, "y": 0 },
       "datasource": { "type": "postgres", "uid": "mortgage_rates_pg" },
       "fieldConfig": {
@@ -51,21 +51,11 @@
         "legend": { "displayMode": "list", "placement": "bottom" },
         "tooltip": { "mode": "multi" }
       },
-      "transformations": [
-        {
-          "id": "partitionByValues",
-          "options": {
-            "fields": ["lender_name"],
-            "keepFields": false,
-            "naming": { "asLabel": true }
-          }
-        }
-      ],
       "targets": [
         {
           "refId": "A",
           "format": "table",
-          "rawSql": "SELECT product_label, lender_name, interest_rate FROM v_rate_observations WHERE observed_date = (SELECT MAX(observed_date) FROM v_rate_observations) AND lender_name IN ($lender) AND product_label IN ($product) ORDER BY product_label, lender_name",
+          "rawSql": "-- Pivoted in SQL rather than via a Grafana transform: partitionByValues splits\n-- this into one frame per lender and the barchart panel doesn't rejoin them\n-- by product_label, so only the first frame (alphabetically) ever rendered.\n-- NOTE: add a MAX(...) FILTER column here when a new lender is added to lenders.yaml.\nSELECT\n  product_label,\n  MAX(apr) FILTER (WHERE lender_name = 'America First Credit Union') AS \"America First Credit Union\",\n  MAX(apr) FILTER (WHERE lender_name = 'Mountain America Credit Union') AS \"Mountain America Credit Union\",\n  MAX(apr) FILTER (WHERE lender_name = 'Rocket Mortgage') AS \"Rocket Mortgage\",\n  MAX(apr) FILTER (WHERE lender_name = 'Utah Community Credit Union') AS \"Utah Community Credit Union\",\n  MAX(apr) FILTER (WHERE lender_name = 'Zions Bank') AS \"Zions Bank\"\nFROM v_rate_observations\nWHERE observed_date = (SELECT MAX(observed_date) FROM v_rate_observations)\n  AND lender_name IN ($lender)\n  AND product_label IN ($product)\nGROUP BY product_label\nORDER BY product_label",
           "rawQuery": true
         }
       ]
