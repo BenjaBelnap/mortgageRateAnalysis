@@ -110,3 +110,48 @@ def test_zions_adapter_parses_div_based_pseudo_table(configs, registry):
     va = by_label["VA 30yr Fixed"]
     assert va.interest_rate == Decimal("6.000")
     assert va.loan.is_va is True
+
+
+def test_goldenwest_adapter_ignores_empty_fha_va_tables(configs, registry):
+    """FHA/VA rate tables exist on the live page but currently have no rows
+    (no data yet, not a parsing failure) -- only the 3 conventional fixed
+    products with real numbers should come through."""
+    observations = _fetch("goldenwest", "goldenwest_rates.html", configs, registry)
+
+    by_label = {o.loan.product_label: o for o in observations}
+    assert len(observations) == 3
+
+    conv30 = by_label["Conventional 30yr Fixed"]
+    assert conv30.interest_rate == Decimal("6.250")
+    assert conv30.apr == Decimal("6.421")
+
+    conv15 = by_label["Conventional 15yr Fixed"]
+    assert conv15.interest_rate == Decimal("5.490")
+    assert conv15.apr == Decimal("5.802")
+
+
+def test_utahfirst_adapter_parses_composite_type_product_term_labels(configs, registry):
+    """Utah First splits each row's label across Type/Product/Term cells
+    instead of one cell, and the page has other unrelated rate tables
+    (auto, RV, HELOC) sharing the same table class -- row_selector scopes to
+    the Home Mortgages tab and product_map keys match the concatenated
+    Type+Product+Term text as a substring."""
+    observations = _fetch("utahfirst", "utahfirst_rates.html", configs, registry)
+
+    by_label = {o.loan.product_label: o for o in observations}
+    assert len(observations) == 7
+
+    conv30 = by_label["Conventional 30yr Fixed"]
+    assert conv30.interest_rate == Decimal("6.250")
+    assert conv30.apr == Decimal("6.300")
+
+    arm = by_label["Conventional 30yr 5/1 ARM"]
+    assert arm.loan.is_fixed is False
+    assert arm.loan.arm_fixed_period_years == 5
+
+    fha15 = by_label["FHA 15yr Fixed"]
+    assert fha15.interest_rate == Decimal("5.125")
+    assert fha15.loan.is_fha is True
+
+    va = by_label["VA 30yr Fixed"]
+    assert va.loan.is_va is True

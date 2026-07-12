@@ -157,3 +157,228 @@ lenders:
     rates_url: "https://www.uccu.com/rates-and-yields/"
     enabled: false
     product_map: {}
+
+  goldenwest:
+    name: "Goldenwest Credit Union"
+    type: local
+    region: "UT"
+    homepage: "https://www.gwcu.org"
+    rates_url: "https://www.gwcu.org/borrow/home-loans/home-loan-rates/"
+    enabled: true
+    # Real <table class="rates-table">, one per product category, verified
+    # live 2026-07. The FHA and VA category tables exist on the page but are
+    # currently empty (no rows) -- only conventional fixed products publish
+    # numbers right now, so that's all that's mapped below.
+    row_selector: "table.rates-table tr"
+    product_map:
+      "30 Year Fixed Loan":
+        loan_term_years: 30
+        is_fixed: true
+      "20 Year Fixed Loan":
+        loan_term_years: 20
+        is_fixed: true
+      "15 Year Fixed Loan":
+        loan_term_years: 15
+        is_fixed: true
+
+  # Disabled: consistently returns 403 via httpx (confirmed live 2026-07,
+  # retried multiple times) despite an identical standard-browser UA header
+  # succeeding via curl -- that mismatch points to Cloudflare fingerprinting
+  # the TLS/HTTP client itself (JA3-style), not filtering on the UA string.
+  # Not attempting to spoof that fingerprint -- same "don't defeat a bot
+  # wall" line as MACU/Incapsula. The adapter/fixture/tests below are kept
+  # working in case a different access path (or client stack) turns up.
+  utahfirst:
+    name: "Utah First Credit Union"
+    type: local
+    region: "UT"
+    homepage: "https://utahfirst.com"
+    rates_url: "https://utahfirst.com/rates/"
+    enabled: false
+    # The page has several unrelated rate tables (auto, RV, signature loans)
+    # sharing the same "table table-striped" class, so row_selector scopes to
+    # the Home Mortgages tab specifically. Each row's label is split across
+    # Type/Product/Term cells rather than one cell -- product_map keys below
+    # are substrings of the concatenated "Type Product Term" text, verified
+    # live 2026-07 (e.g. row text "Fixed Conventional 30 Years ...").
+    row_selector: "#homeratetab table tr"
+    product_map:
+      "Conventional 30 Years":
+        loan_term_years: 30
+        is_fixed: true
+      "Conventional 15 Years":
+        loan_term_years: 15
+        is_fixed: true
+      "Conventional 10 Years":
+        loan_term_years: 10
+        is_fixed: true
+      "5/1 Adjustable 30 Years":
+        loan_term_years: 30
+        is_fixed: false
+        arm_fixed_period_years: 5
+      "FHA 30 Years":
+        loan_term_years: 30
+        is_fixed: true
+        is_fha: true
+      "FHA 15 Years":
+        loan_term_years: 15
+        is_fixed: true
+        is_fha: true
+      "VA 30 Years":
+        loan_term_years: 30
+        is_fixed: true
+        is_va: true
+
+  granite:
+    name: "Granite Credit Union"
+    type: local
+    region: "UT"
+    homepage: "https://www.granite.org"
+    rates_url: "https://www.granite.org/real-estate-loans"
+    enabled: true
+    # Rate/Fee/APR cells are populated client-side via
+    # document.write(getRateTweak('KEY')), not plain text -- doesn't fit
+    # HtmlTableLenderAdapter. See adapters/granite.py: the same KEY -> value
+    # pairs are embedded statically as JSON elsewhere in the page (a
+    # Squarespace tweak blob), so the bespoke adapter reads those numbers
+    # directly out of the raw HTML response without executing any JS.
+    # Verified live 2026-07. Only the "Traditional Mortgage" table's 3
+    # conventional/ARM products are mapped -- short-term (5/7/10/12yr),
+    # HELOC, construction, and reverse-mortgage rows are niche products not
+    # comparable to what other lenders in this dataset publish.
+    percent_field_order: [interest_rate, points, apr]
+    product_map:
+      "30-Year Conventional":
+        loan_term_years: 30
+        is_fixed: true
+      "30-Year – 7/6 mo ARM":
+        loan_term_years: 30
+        is_fixed: false
+        arm_fixed_period_years: 7
+      "15-Year Conventional":
+        loan_term_years: 15
+        is_fixed: true
+
+  # Disabled: no standard first-mortgage rate table -- that table is present
+  # but empty ("get a personalized quote" instead of numbers), verified live
+  # 2026-07. The only tables with real numbers are a niche "Short & Sweet"
+  # short-term product (odd term-as-column layout) and a 2nd-mortgage table,
+  # neither comparable to the primary 30/15yr products tracked for other
+  # lenders. Re-enable if the first-mortgage table gets populated.
+  cyprus:
+    name: "Cyprus Credit Union"
+    type: local
+    region: "UT"
+    homepage: "https://www.cypruscu.com"
+    rates_url: "https://www.cypruscu.com/loans/loan-resources/loan-rates"
+    enabled: false
+    product_map: {}
+
+  # Disabled: standard mortgage products (conventional/FHA/VA/jumbo) show no
+  # numbers -- "call (801) 481-8840" instead, verified live 2026-07. The only
+  # published numbers are for a niche "No-Fee First Mortgage" product
+  # (5/7/10/12yr terms pivoted by LTV tier, not a single rate/APR per term),
+  # not comparable to the primary products tracked for other lenders.
+  canyonview:
+    name: "Canyon View Federal Credit Union"
+    type: local
+    region: "UT"
+    homepage: "https://www.canyonviewcu.com"
+    rates_url: "https://www.canyonviewcu.com/rates/"
+    enabled: false
+    product_map: {}
+
+  # Disabled: rates page has no table at all -- text explicitly directs
+  # customers to call a loan officer instead, verified live 2026-07.
+  bankofutah:
+    name: "Bank of Utah"
+    type: local
+    region: "UT"
+    homepage: "https://www.bankofutah.com"
+    rates_url: "https://www.bankofutah.com/home-loans/resources-and-education/home-loan-interest-rates"
+    enabled: false
+    product_map: {}
+
+  # Disabled: no numeric mortgage rates published anywhere on the site --
+  # the residential-loans page lists product categories (Fixed, ARM, FHA,
+  # VA, Jumbo, USDA) with description text only, ending in "Talk with a
+  # Mortgage Officer". Verified live 2026-07.
+  altabank:
+    name: "Altabank"
+    type: local
+    region: "UT"
+    homepage: "https://www.altabank.com"
+    rates_url: "https://www.altabank.com/mortgage-and-home-loans/residential-loans"
+    enabled: false
+    product_map: {}
+
+  # Disabled: a real rate table exists on the site but is explicitly deposit
+  # rates only ("For information about loan rates, please contact your
+  # nearest Central Bank office location"). The mortgage page itself is
+  # product-category cards with no numbers. Verified live 2026-07.
+  centralbank:
+    name: "Central Bank"
+    type: local
+    region: "UT"
+    homepage: "https://www.cbutah.com"
+    rates_url: "https://www.cbutah.com/personal-banking/mortgage/mortgage-loans/"
+    enabled: false
+    product_map: {}
+
+  # Disabled: mortgage broker -- operates as per-loan-officer branded
+  # microsites, no centralized public rate table, all paths lead to a quote
+  # request / application. Verified live 2026-07.
+  prmi:
+    name: "Primary Residential Mortgage Inc."
+    type: national
+    region: null
+    homepage: "https://www.primeres.com"
+    rates_url: "https://www.primeres.com/mortgage-tools/calculators"
+    enabled: false
+    product_map: {}
+
+  # Disabled: mortgage broker -- no /rates page exists on the site (404s),
+  # nav only offers a calculator and "request a quote". Verified live 2026-07.
+  firstcolony:
+    name: "First Colony Mortgage"
+    type: national
+    region: null
+    homepage: "https://www.firstcolonymortgage.com"
+    rates_url: "https://www.firstcolonymortgage.com"
+    enabled: false
+    product_map: {}
+
+  # Disabled: the /rates/ page body is a single lazy-loaded scheduling/
+  # consultation iframe widget, not a rate table. Verified live 2026-07.
+  securitynational:
+    name: "SecurityNational Mortgage Company"
+    type: national
+    region: null
+    homepage: "https://www.snmc.com"
+    rates_url: "https://www.snmc.com/rates/"
+    enabled: false
+    product_map: {}
+
+  # Disabled: the "rates" page is an educational article about how mortgage
+  # rates work, not a live numeric rate table -- confirms Guild requires a
+  # loan officer / online application for an actual quote. Verified live
+  # 2026-07.
+  guild:
+    name: "Guild Mortgage"
+    type: national
+    region: null
+    homepage: "https://www.guildmortgage.com"
+    rates_url: "https://www.guildmortgage.com/buying-a-home/mortgage-rates-explained/primary-residence-mortgage-rates/"
+    enabled: false
+    product_map: {}
+
+  # Disabled: mortgage broker -- the "rate-quote" page is a lead-gen form
+  # (name/email/phone), no published rates. Verified live 2026-07.
+  intercap:
+    name: "Intercap Lending"
+    type: local
+    region: "UT"
+    homepage: "https://www.intercaplending.com"
+    rates_url: "https://www.intercaplending.com/rate-quote/"
+    enabled: false
+    product_map: {}

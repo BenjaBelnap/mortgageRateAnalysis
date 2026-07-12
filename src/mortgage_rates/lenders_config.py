@@ -15,7 +15,7 @@ from mortgage_rates.models import LenderType
 
 
 def load_lender_configs(path: Path) -> dict[str, LenderConfig]:
-    data = yaml.safe_load(Path(path).read_text()) or {}
+    data = yaml.safe_load(Path(path).read_text(encoding="utf-8")) or {}
     configs: dict[str, LenderConfig] = {}
     for slug, raw in (data.get("lenders") or {}).items():
         configs[slug] = LenderConfig(

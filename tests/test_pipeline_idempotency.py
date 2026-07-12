@@ -34,6 +34,15 @@ def _mock_lender_pages():
     respx.get("https://www.zionsbank.com/personal/home-loans/mortgage-rates/").mock(
         return_value=httpx.Response(200, text=(FIXTURES / "zions_rates.html").read_text())
     )
+    respx.get("https://www.gwcu.org/borrow/home-loans/home-loan-rates/").mock(
+        return_value=httpx.Response(200, text=(FIXTURES / "goldenwest_rates.html").read_text())
+    )
+    respx.get("https://utahfirst.com/rates/").mock(
+        return_value=httpx.Response(200, text=(FIXTURES / "utahfirst_rates.html").read_text())
+    )
+    respx.get("https://www.granite.org/real-estate-loans").mock(
+        return_value=httpx.Response(200, text=(FIXTURES / "granite_rates.html").read_text(encoding="utf-8"))
+    )
 
 
 def test_running_pipeline_twice_does_not_duplicate_rows(tmp_path):
@@ -50,8 +59,12 @@ def test_running_pipeline_twice_does_not_duplicate_rows(tmp_path):
         count_after_first = conn.execute(select(func.count()).select_from(rate_observations)).scalar_one()
 
     assert not first.failed
-    assert first.observation_count == 18  # macu disabled (Incapsula-blocked); 6 rocket + 6 afcu + 6 zions
-    assert count_after_first == 18
+    # macu/utahfirst/cyprus/canyonview/bankofutah/altabank/centralbank/prmi/
+    # firstcolony/securitynational/guild/intercap all disabled (bot-walled or
+    # no usable public rate data) -- utahfirst's mock above is unused while
+    # disabled, kept ready for if it's ever re-enabled.
+    assert first.observation_count == 24  # 6 rocket + 6 afcu + 6 zions + 3 goldenwest + 3 granite
+    assert count_after_first == 24
 
     with respx.mock:
         _mock_lender_pages()
@@ -60,5 +73,5 @@ def test_running_pipeline_twice_does_not_duplicate_rows(tmp_path):
     with engine.connect() as conn:
         count_after_second = conn.execute(select(func.count()).select_from(rate_observations)).scalar_one()
 
-    assert second.observation_count == 18
-    assert count_after_second == 18  # unchanged: upsert refreshed, didn't append
+    assert second.observation_count == 24
+    assert count_after_second == 24  # unchanged: upsert refreshed, didn't append
