@@ -27,5 +27,7 @@ def load_lender_configs(path: Path) -> dict[str, LenderConfig]:
             rates_url=raw["rates_url"],
             product_map=raw.get("product_map", {}),
             enabled=raw.get("enabled", True),
+            row_selector=raw.get("row_selector", "tr"),
+            percent_field_order=tuple(raw.get("percent_field_order", ("interest_rate", "apr"))),
         )
     return configs

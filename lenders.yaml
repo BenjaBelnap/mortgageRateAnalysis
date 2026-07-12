@@ -14,13 +14,18 @@
 # needed).
 
 lenders:
+  # Disabled: sits behind an Incapsula JS bot-challenge, confirmed live
+  # 2026-07 — a plain HTTP client gets a challenge page regardless of
+  # headers, not rate data. Not attempting to defeat that (see README
+  # "Known limitation" section). Re-enable if an official/licensed data
+  # source or a different access path turns up.
   macu:
     name: "Mountain America Credit Union"
     type: local
     region: "UT"
     homepage: "https://www.macu.com"
     rates_url: "https://www.macu.com/rates/home"
-    enabled: true
+    enabled: false
     product_map:
       "30-year fixed mortgage":
         loan_term_years: 30
@@ -74,12 +79,81 @@ lenders:
         is_fixed: true
         is_jumbo: true
 
-  # Not yet implemented — flip to true once adapters/uccu.py exists.
+  afcu:
+    name: "America First Credit Union"
+    type: local
+    region: "UT"
+    homepage: "https://www.americafirst.com"
+    rates_url: "https://www.americafirst.com/rates/loan-rates.html"
+    enabled: true
+    # AFCU's table has an extra Discount Points column between rate and APR
+    # (verified live 2026-07): "10 Year Fixed | 5.625% | 0.5% | 5.952%".
+    percent_field_order: [interest_rate, points, apr]
+    product_map:
+      "10 Year Fixed":
+        loan_term_years: 10
+        is_fixed: true
+      "15 Year Fixed":
+        loan_term_years: 15
+        is_fixed: true
+      "20 Year Fixed":
+        loan_term_years: 20
+        is_fixed: true
+      "30 Year Fixed":
+        loan_term_years: 30
+        is_fixed: true
+      "FHA 30 Year":
+        loan_term_years: 30
+        is_fixed: true
+        is_fha: true
+      "VA 30 Year":
+        loan_term_years: 30
+        is_fixed: true
+        is_va: true
+
+  zions:
+    name: "Zions Bank"
+    type: local
+    region: "UT"
+    homepage: "https://www.zionsbank.com"
+    rates_url: "https://www.zionsbank.com/personal/home-loans/mortgage-rates/"
+    enabled: true
+    # Zions fakes a table with divs, not real <tr> — verified live 2026-07.
+    row_selector: ".cmp-rates-tables__tr"
+    product_map:
+      "15-Year Conventional Fixed":
+        loan_term_years: 15
+        is_fixed: true
+      "30-Year Conventional Fixed":
+        loan_term_years: 30
+        is_fixed: true
+      "7/1 Adjustable-Rate Mortgage":
+        loan_term_years: 30
+        is_fixed: false
+        arm_fixed_period_years: 7
+      "30-Year Fixed FHA Loan":
+        loan_term_years: 30
+        is_fixed: true
+        is_fha: true
+      "30-Year VA Fixed":
+        loan_term_years: 30
+        is_fixed: true
+        is_va: true
+      "7/1 Jumbo ARM":
+        loan_term_years: 30
+        is_fixed: false
+        arm_fixed_period_years: 7
+        is_jumbo: true
+
+  # Not yet implemented — its own mortgage-specific rates page didn't have
+  # findable rate content on a plain GET (checked 2026-07); likely lives in a
+  # third-party widget (uccumo.mymortgage-online.com). Flip to true once
+  # adapters/uccu.py exists and the real source is confirmed.
   uccu:
     name: "Utah Community Credit Union"
     type: local
     region: "UT"
     homepage: "https://www.uccu.com"
-    rates_url: "https://www.uccu.com/rates/"
+    rates_url: "https://www.uccu.com/rates-and-yields/"
     enabled: false
     product_map: {}

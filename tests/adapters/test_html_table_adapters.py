@@ -71,3 +71,42 @@ def test_adapter_fetch_is_deterministic(configs, registry):
     first_rows = {(o.loan.product_label, o.interest_rate, o.apr) for o in first}
     second_rows = {(o.loan.product_label, o.interest_rate, o.apr) for o in second}
     assert first_rows == second_rows
+
+
+def test_afcu_adapter_parses_all_products_and_ignores_unmapped_rows(configs, registry):
+    """The fixture includes an auto loan row and two 'Utah Housing' rows not
+    in product_map — they must be silently skipped, not mis-parsed."""
+    observations = _fetch("afcu", "afcu_rates.html", configs, registry)
+
+    by_label = {o.loan.product_label: o for o in observations}
+    assert len(observations) == 6
+
+    conv30 = by_label["Conventional 30yr Fixed"]
+    assert conv30.interest_rate == Decimal("6.375")
+    assert conv30.points == Decimal("0.5")
+    assert conv30.apr == Decimal("6.517")
+
+    fha30 = by_label["FHA 30yr Fixed"]
+    assert fha30.interest_rate == Decimal("5.875")
+    assert fha30.apr == Decimal("6.73")
+    assert fha30.loan.is_fha is True
+
+
+def test_zions_adapter_parses_div_based_pseudo_table(configs, registry):
+    observations = _fetch("zions", "zions_rates.html", configs, registry)
+
+    by_label = {o.loan.product_label: o for o in observations}
+    assert len(observations) == 6
+
+    conv15 = by_label["Conventional 15yr Fixed"]
+    assert conv15.interest_rate == Decimal("5.625")
+    assert conv15.apr == Decimal("5.909")
+
+    jumbo_arm = by_label["Jumbo 30yr 7/1 ARM"]
+    assert jumbo_arm.loan.is_jumbo is True
+    assert jumbo_arm.loan.is_fixed is False
+    assert jumbo_arm.loan.arm_fixed_period_years == 7
+
+    va = by_label["VA 30yr Fixed"]
+    assert va.interest_rate == Decimal("6.000")
+    assert va.loan.is_va is True

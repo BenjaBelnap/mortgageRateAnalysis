@@ -28,6 +28,12 @@ def _mock_lender_pages():
     respx.get("https://www.rocketmortgage.com/mortgage-rates").mock(
         return_value=httpx.Response(200, text=(FIXTURES / "rocket_rates.html").read_text())
     )
+    respx.get("https://www.americafirst.com/rates/loan-rates.html").mock(
+        return_value=httpx.Response(200, text=(FIXTURES / "afcu_rates.html").read_text())
+    )
+    respx.get("https://www.zionsbank.com/personal/home-loans/mortgage-rates/").mock(
+        return_value=httpx.Response(200, text=(FIXTURES / "zions_rates.html").read_text())
+    )
 
 
 def test_running_pipeline_twice_does_not_duplicate_rows(tmp_path):
@@ -44,8 +50,8 @@ def test_running_pipeline_twice_does_not_duplicate_rows(tmp_path):
         count_after_first = conn.execute(select(func.count()).select_from(rate_observations)).scalar_one()
 
     assert not first.failed
-    assert first.observation_count == 11  # 5 macu + 6 rocket
-    assert count_after_first == 11
+    assert first.observation_count == 18  # macu disabled (Incapsula-blocked); 6 rocket + 6 afcu + 6 zions
+    assert count_after_first == 18
 
     with respx.mock:
         _mock_lender_pages()
@@ -54,5 +60,5 @@ def test_running_pipeline_twice_does_not_duplicate_rows(tmp_path):
     with engine.connect() as conn:
         count_after_second = conn.execute(select(func.count()).select_from(rate_observations)).scalar_one()
 
-    assert second.observation_count == 11
-    assert count_after_second == 11  # unchanged: upsert refreshed, didn't append
+    assert second.observation_count == 18
+    assert count_after_second == 18  # unchanged: upsert refreshed, didn't append

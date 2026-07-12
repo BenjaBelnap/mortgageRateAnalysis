@@ -56,26 +56,22 @@ Adapter tests run fully offline against recorded HTML fixtures
 construction. `tests/test_pipeline_idempotency.py` proves that running the
 pipeline twice for the same date does not duplicate rows.
 
-## Known limitation: lender scraping is fragile by nature
+## Lender status (verified live, 2026-07)
 
-Verified live (2026-07):
-- **Rocket Mortgage** — works. Needed a standard browser `User-Agent` (its
-  basic bot filter blocks the default httpx client string) and a bespoke
-  parser (`adapters/rocket.py`) — the page uses custom `<sc-rate-card>` web
-  components, not an HTML `<table>`.
-- **MACU** — currently blocked entirely by an Incapsula JS bot-challenge; a
-  plain HTTP client gets a challenge page, not rate data, regardless of
-  headers. This project does not attempt to defeat that (headless-browser
-  stealth automation to bypass a bot-detection challenge is a different,
-  more adversarial thing than polite scraping, and likely violates MACU's
-  terms of service). Options: find an official/licensed rate-data source,
-  reach out to MACU directly, or swap in a different local lender whose page
-  doesn't sit behind this kind of wall — `enabled: false` it in
-  `lenders.yaml` in the meantime.
+| Lender | Type | Status | Notes |
+|---|---|---|---|
+| Rocket Mortgage | national | ✅ working | Needed a standard browser `User-Agent` (basic bot filter). Page uses custom `<sc-rate-card>` elements, not a table — bespoke parser (`adapters/rocket.py`). |
+| America First Credit Union | local (UT) | ✅ working | Plain HTML table; three percent columns (rate, points, APR) — `percent_field_order` in `lenders.yaml`. |
+| Zions Bank | local (UT) | ✅ working | Real table data, but rendered as divs with BEM classes, not `<tr>` — `row_selector: ".cmp-rates-tables__tr"` in `lenders.yaml`. |
+| MACU | local (UT) | ❌ disabled | Sits behind an Incapsula JS bot-challenge — a plain HTTP client gets a challenge page regardless of headers. **Not attempting to defeat this**: headless-browser stealth automation to bypass a bot-detection challenge is a different, more adversarial thing than polite scraping, and likely violates MACU's terms of service. Options: an official/licensed data source, contacting MACU directly, or leaving it disabled. |
+| UCCU | local (UT) | ⏸ not implemented | No mortgage rate content found on a plain GET of the obvious rates page — likely lives behind a third-party widget (`mymortgage-online.com`). Needs investigation before an adapter is worth writing. |
 
-This is exactly the kind of thing `product_map` labels and adapter code will
-need to be re-checked against periodically — see the comment at the top of
-`lenders.yaml`.
+This is exactly the kind of thing `product_map`, `row_selector`, and
+`percent_field_order` in `lenders.yaml` will need to be re-checked against
+periodically as lenders redesign their pages — see the comment at the top of
+that file. `HtmlTableLenderAdapter` covers any lender whose rates page is a
+real or div-based label+percentage table (most of them); a lender with a
+genuinely different shape (like Rocket) implements `fetch()` directly instead.
 
 ## Deploying
 

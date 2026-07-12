@@ -23,12 +23,14 @@ from mortgage_rates.normalize import loan_attributes_from_label, parse_percent
 _PERCENT_RE = re.compile(r"\d+(?:\.\d+)?\s*%")
 
 
-def extract_labeled_rate_rows(html: str, labels: list[str]) -> dict[str, list[Decimal]]:
-    """Scan every <tr> for text containing one of `labels`; return the
-    ordered percentage figures found in that row (typically [rate, apr])."""
+def extract_labeled_rate_rows(html: str, labels: list[str], row_selector: str = "tr") -> dict[str, list[Decimal]]:
+    """Scan every row (real <tr>, or a div-based pseudo-table row selector
+    for lenders like Zions that fake a table with BEM-style divs) for text
+    containing one of `labels`; return the ordered percentage figures found
+    in that row (e.g. [rate, apr] or [rate, points, apr])."""
     tree = LexborHTMLParser(html)
     results: dict[str, list[Decimal]] = {}
-    for row in tree.css("tr"):
+    for row in tree.css(row_selector):
         text = row.text(separator=" ", strip=True)
         if not text:
             continue
@@ -57,19 +59,21 @@ class HtmlTableLenderAdapter:
         response.raise_for_status()
         fetched_at = dt.datetime.now(dt.UTC)
 
-        rows = extract_labeled_rate_rows(response.text, list(config.product_map))
+        rows = extract_labeled_rate_rows(response.text, list(config.product_map), config.row_selector)
 
         observations: list[RateObservation] = []
         for label, percents in rows.items():
-            rate, *rest = percents
-            apr = rest[0] if rest else None
+            fields = dict(zip(config.percent_field_order, percents))
+            if "interest_rate" not in fields:
+                continue
             observations.append(
                 RateObservation(
                     lender_slug=config.slug,
                     observed_date=ctx.target_date,
                     loan=loan_attributes_from_label(label, config.product_map),
-                    interest_rate=rate,
-                    apr=apr,
+                    interest_rate=fields["interest_rate"],
+                    apr=fields.get("apr"),
+                    points=fields.get("points"),
                     source_url=config.rates_url,
                     fetched_at=fetched_at,
                     raw={"label": label, "percents": [str(p) for p in percents]},

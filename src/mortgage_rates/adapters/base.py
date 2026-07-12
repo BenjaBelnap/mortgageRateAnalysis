@@ -28,6 +28,14 @@ class LenderConfig:
     rates_url: str
     product_map: dict[str, dict]
     enabled: bool = True
+    # HtmlTableLenderAdapter config: some lenders use a real <table>, others a
+    # div-based pseudo-table with BEM-style row classes (e.g. Zions'
+    # ".cmp-rates-tables__tr") — same shape, different CSS selector.
+    row_selector: str = "tr"
+    # Order the percentage figures appear in a row, left to right. Most
+    # lenders show [rate, apr]; some (e.g. AFCU) interleave points:
+    # [rate, points, apr]. Extra/missing trailing fields are left as None.
+    percent_field_order: tuple[str, ...] = ("interest_rate", "apr")
 
 
 @dataclass(frozen=True)
