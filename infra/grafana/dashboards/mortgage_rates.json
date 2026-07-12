@@ -1,0 +1,76 @@
+{
+  "uid": "mortgage-rates-overview",
+  "title": "Mortgage Rates Overview",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "timezone": "browser",
+  "time": { "from": "now-90d", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "lender",
+        "type": "query",
+        "datasource": { "type": "postgres", "uid": "mortgage_rates_pg" },
+        "query": "SELECT DISTINCT lender_name FROM v_rate_observations ORDER BY 1",
+        "multi": true,
+        "includeAll": true,
+        "current": { "text": "All", "value": "$__all" },
+        "refresh": 2
+      },
+      {
+        "name": "product",
+        "type": "query",
+        "datasource": { "type": "postgres", "uid": "mortgage_rates_pg" },
+        "query": "SELECT DISTINCT product_label FROM v_rate_observations ORDER BY 1",
+        "multi": true,
+        "includeAll": true,
+        "current": { "text": "All", "value": "$__all" },
+        "refresh": 2
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Interest rate over time",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 0 },
+      "datasource": { "type": "postgres", "uid": "mortgage_rates_pg" },
+      "fieldConfig": {
+        "defaults": { "unit": "percent", "custom": { "drawStyle": "line", "spanNulls": true } },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "time_series",
+          "rawSql": "SELECT observed_date AS \"time\", lender_name || ' - ' || product_label AS metric, interest_rate FROM v_rate_observations WHERE lender_name IN ($lender) AND product_label IN ($product) AND $__timeFilter(observed_date) ORDER BY 1",
+          "rawQuery": true
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "table",
+      "title": "Latest rates by lender and product",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 10 },
+      "datasource": { "type": "postgres", "uid": "mortgage_rates_pg" },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "interest_rate" }, "properties": [{ "id": "unit", "value": "percent" }] },
+          { "matcher": { "id": "byName", "options": "apr" }, "properties": [{ "id": "unit", "value": "percent" }] }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT lender_name, product_label, interest_rate, apr, observed_date FROM v_rate_observations WHERE observed_date = (SELECT MAX(observed_date) FROM v_rate_observations) AND lender_name IN ($lender) AND product_label IN ($product) ORDER BY lender_name, product_label",
+          "rawQuery": true
+        }
+      ]
+    }
+  ]
+}

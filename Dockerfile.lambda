@@ -1,0 +1,14 @@
+# Container-image Lambda: sidesteps cross-compiling psycopg's C extension for
+# Amazon Linux by building inside the actual Lambda base image, rather than
+# zip-packaging wheels built on a different platform.
+FROM public.ecr.aws/lambda/python:3.13
+
+COPY pyproject.toml uv.lock ./
+RUN pip install --no-cache-dir uv \
+    && uv export --no-dev --no-hashes -o requirements.txt \
+    && pip install --no-cache-dir -r requirements.txt -t "${LAMBDA_TASK_ROOT}"
+
+COPY src/mortgage_rates "${LAMBDA_TASK_ROOT}/mortgage_rates"
+COPY lenders.yaml "${LAMBDA_TASK_ROOT}/lenders.yaml"
+
+CMD ["mortgage_rates.handler.handler"]

@@ -1,0 +1,85 @@
+# Lender registry: which adapters run, where they fetch from, and how each
+# lender's raw product labels map to structured LoanAttributes.
+#
+# Adding a lender: drop an adapters/<slug>.py module (or reuse
+# HtmlTableLenderAdapter for a simple label+rate%+APR% table) and a block
+# here. Nothing else needs to change.
+#
+# NOTE on product_map keys: for HtmlTableLenderAdapter, each key is matched
+# as a substring against the visible text of every <tr> on the rates page.
+# These labels were sourced from a live look at each site's rates page
+# (2026-07) but rate pages change their wording over time — if an adapter
+# starts returning fewer observations than expected, re-check the label
+# text against the live page and update the keys below (no code change
+# needed).
+
+lenders:
+  macu:
+    name: "Mountain America Credit Union"
+    type: local
+    region: "UT"
+    homepage: "https://www.macu.com"
+    rates_url: "https://www.macu.com/rates/home"
+    enabled: true
+    product_map:
+      "30-year fixed mortgage":
+        loan_term_years: 30
+        is_fixed: true
+      "15-year fixed mortgage":
+        loan_term_years: 15
+        is_fixed: true
+      "FHA 30-year fixed":
+        loan_term_years: 30
+        is_fixed: true
+        is_fha: true
+      "VA 30-year fixed":
+        loan_term_years: 30
+        is_fixed: true
+        is_va: true
+      "5/1 adjustable rate mortgage":
+        loan_term_years: 30
+        is_fixed: false
+        arm_fixed_period_years: 5
+
+  rocket:
+    name: "Rocket Mortgage"
+    type: national
+    region: null
+    homepage: "https://www.rocketmortgage.com"
+    rates_url: "https://www.rocketmortgage.com/mortgage-rates"
+    enabled: true
+    # Labels below are verbatim from the live page's <sc-rate-card> elements
+    # (checked 2026-07) — this page is NOT a plain HTML table, see
+    # adapters/rocket.py for the bespoke parser.
+    product_map:
+      "30-year fixed":
+        loan_term_years: 30
+        is_fixed: true
+      "20-year fixed":
+        loan_term_years: 20
+        is_fixed: true
+      "15-year fixed":
+        loan_term_years: 15
+        is_fixed: true
+      "30-year FHA":
+        loan_term_years: 30
+        is_fixed: true
+        is_fha: true
+      "30-year VA":
+        loan_term_years: 30
+        is_fixed: true
+        is_va: true
+      "30-year jumbo fixed":
+        loan_term_years: 30
+        is_fixed: true
+        is_jumbo: true
+
+  # Not yet implemented — flip to true once adapters/uccu.py exists.
+  uccu:
+    name: "Utah Community Credit Union"
+    type: local
+    region: "UT"
+    homepage: "https://www.uccu.com"
+    rates_url: "https://www.uccu.com/rates/"
+    enabled: false
+    product_map: {}
