@@ -100,6 +100,34 @@
           "rawQuery": true
         }
       ]
+    },
+    {
+      "id": 4,
+      "type": "barchart",
+      "title": "Best rate by loan type (last 24h)",
+      "description": "The single lowest APR seen for each loan type in the last 24 hours, and which lender offered it -- a leaderboard, not a per-lender comparison (that's the panel above). \"Common\" loan types are scoped dynamically to ones actually quoted by 2+ lenders in the window, not a hardcoded list, so it doesn't go stale as lenders are added/disabled. Sorted best-first; one hue since the bars aren't a lender identity encoding (a rerun can hand the win to a different lender in the same slot).",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 31 },
+      "datasource": { "type": "postgres", "uid": "mortgage_rates_pg" },
+      "fieldConfig": {
+        "defaults": { "unit": "percent", "color": { "mode": "fixed", "fixedColor": "blue" } },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "xTickLabelRotation": 0,
+        "barWidth": 0.7,
+        "showValue": "always",
+        "legend": { "showLegend": false },
+        "tooltip": { "mode": "single" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "WITH last_24h AS (\n  SELECT product_label, lender_name, apr\n  FROM v_rate_observations\n  WHERE fetched_at >= NOW() - INTERVAL '24 hours'\n    AND apr IS NOT NULL\n    AND lender_name IN ($lender)\n    AND product_label IN ($product)\n),\ncommon_products AS (\n  -- \"common\" = actually compared across 2+ lenders in the window, not a\n  -- hardcoded list -- so it stays correct as lenders are added/disabled.\n  SELECT product_label\n  FROM last_24h\n  GROUP BY product_label\n  HAVING COUNT(DISTINCT lender_name) >= 2\n),\nranked AS (\n  SELECT\n    product_label,\n    lender_name,\n    apr,\n    ROW_NUMBER() OVER (PARTITION BY product_label ORDER BY apr ASC, lender_name ASC) AS rnk\n  FROM last_24h\n  WHERE product_label IN (SELECT product_label FROM common_products)\n)\nSELECT\n  product_label || ' — ' || lender_name AS \"Best offer\",\n  apr AS \"APR\"\nFROM ranked\nWHERE rnk = 1\nORDER BY apr ASC",
+          "rawQuery": true
+        }
+      ]
     }
   ]
 }
