@@ -65,6 +65,9 @@ pipeline twice for the same date does not duplicate rows.
 | Zions Bank | local (UT) | ✅ working | Real table data, but rendered as divs with BEM classes, not `<tr>` — `row_selector: ".cmp-rates-tables__tr"` in `lenders.yaml`. |
 | Goldenwest Credit Union | local (UT) | ✅ working | Plain HTML table (`table.rates-table`). FHA/VA tables exist on the page but are currently empty — only the 3 conventional fixed products with real numbers are mapped. |
 | Granite Credit Union | local (UT) | ✅ working | Rate cells are populated client-side via `document.write(getRateTweak('KEY'))`, not plain text. The same KEY → value pairs are embedded statically as JSON elsewhere on the page, so `adapters/granite.py` reads them directly out of the raw HTML — no JS execution needed. |
+| USU Credit Union | local (UT) | ✅ working | Same platform/markup as Goldenwest (USU CU has been a branded division of Goldenwest Credit Union since a 2013 merger) — plain `table.rates-table`. FHA/VA tables exist but are currently empty, same as Goldenwest. |
+| SoFi Bank | national | ✅ working | Server-rendered React SPA — rate/APR are literal strings inside inline-script `RateBox` component calls, not `<table>` markup. `adapters/sofi.py` regex-extracts them; no JS execution needed. Only 10/15/20/30yr fixed are published on this page. |
+| RANLife Home Loans | local (UT) | ✅ working | Real `<table>`, but Rate/APR cells have no literal `%` character, so it doesn't fit `HtmlTableLenderAdapter`'s percent-figure regex — `adapters/ranlife.py` reads the cells positionally instead. |
 | MACU | local (UT) | ❌ disabled | Sits behind an Incapsula JS bot-challenge — a plain HTTP client gets a challenge page regardless of headers. **Not attempting to defeat this**: headless-browser stealth automation to bypass a bot-detection challenge is a different, more adversarial thing than polite scraping, and likely violates MACU's terms of service. Options: an official/licensed data source, contacting MACU directly, or leaving it disabled. |
 | Utah First Credit Union | local (UT) | ❌ disabled | Consistently returns 403 via `httpx` despite an identical UA succeeding via `curl` — points to TLS/client fingerprinting (Cloudflare), not a UA-string filter. Same "don't defeat a bot wall" line as MACU. Adapter/fixture/tests are kept working in case a different access path turns up. |
 | UCCU | local (UT) | ⏸ not implemented | No mortgage rate content found on a plain GET of the obvious rates page — likely lives behind a third-party widget (`mymortgage-online.com`). Needs investigation before an adapter is worth writing. |
@@ -78,6 +81,14 @@ pipeline twice for the same date does not duplicate rows.
 | SecurityNational Mortgage Company | national | ⏸ no usable data | The `/rates/` page body is a single lazy-loaded scheduling/consultation iframe widget, not a rate table. |
 | Guild Mortgage | national | ⏸ no usable data | The "rates" page is an educational article, not a live numeric table — actual quotes require a loan officer. |
 | Intercap Lending | local (UT) | ⏸ no usable data | The "rate-quote" page is a lead-gen form, no published rates. |
+| American United Federal Credit Union | local (UT) | ⏸ no usable data | The standard 15/20/30yr fixed First Mortgage row is explicitly "Call ... for today's rates" in its own rate table; only niche products (balloon, construction, lot loans, HELOC) publish numbers. |
+| Citywide Home Mortgage | national | ⏸ no usable data | Mortgage broker — organized around branch/loan-officer pages, no centralized public rate table. |
+| Veritas Funding | local (UT) | ⏸ no usable data | Mortgage broker — organized around branch pages, no centralized public rate table, just "Apply Now" lead-capture CTAs. |
+| Castle & Cooke Mortgage | national | ⏸ no usable data | Mortgage broker — no dedicated rates page; site is "Find a Loan Officer" oriented. |
+| Sun American Mortgage Company | national | ⏸ no usable data | Mortgage broker — its "mortgage rates" page is a generic SEO/educational article about rates in general, not a published rate table. |
+| City First Mortgage Services | local (UT) | ⏸ no usable data | Mortgage broker/loan-officer network — no rates page in nav or sitemap; guessed paths silently render the SPA's contact-page fallback. |
+| CrossCountry Mortgage | national | ⏸ no usable data | Mortgage broker — the only "rates" page is educational copy about how rates work; their own quote flow routes to a loan officer. |
+| Northpointe Bank | national | ⏸ no usable data | Publishes public deposit/CD rates but no consumer mortgage rate table — every loan-option page only offers a "Get a quote" link to an external lead-gen widget, consistent with a correspondent/wholesale-heavy lending model. |
 
 This is exactly the kind of thing `product_map`, `row_selector`, and
 `percent_field_order` in `lenders.yaml` will need to be re-checked against

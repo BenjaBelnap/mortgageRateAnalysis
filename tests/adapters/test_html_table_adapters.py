@@ -155,3 +155,20 @@ def test_utahfirst_adapter_parses_composite_type_product_term_labels(configs, re
 
     va = by_label["VA 30yr Fixed"]
     assert va.loan.is_va is True
+
+
+def test_usucu_adapter_ignores_empty_fha_va_tables(configs, registry):
+    """Same platform/markup as Goldenwest (USU CU is a branded division of
+    Goldenwest Credit Union) -- FHA/VA tables exist but have no rows yet."""
+    observations = _fetch("usucu", "usucu_rates.html", configs, registry)
+
+    by_label = {o.loan.product_label: o for o in observations}
+    assert len(observations) == 3
+
+    conv30 = by_label["Conventional 30yr Fixed"]
+    assert conv30.interest_rate == Decimal("6.250")
+    assert conv30.apr == Decimal("6.421")
+
+    conv20 = by_label["Conventional 20yr Fixed"]
+    assert conv20.interest_rate == Decimal("5.875")
+    assert conv20.apr == Decimal("6.096")

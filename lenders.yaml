@@ -382,3 +382,190 @@ lenders:
     rates_url: "https://www.intercaplending.com/rate-quote/"
     enabled: false
     product_map: {}
+
+  usucu:
+    name: "USU Credit Union"
+    type: local
+    region: "UT"
+    homepage: "https://www.usucu.org"
+    rates_url: "https://www.usucu.org/borrow/home-loans/home-loan-rates"
+    enabled: true
+    # Same platform/markup as Goldenwest (USU CU has been a branded division
+    # of Goldenwest Credit Union since a 2013 merger) -- real
+    # <table class="rates-table">, one per category. FHA/VA category tables
+    # exist but are currently empty, same situation as Goldenwest. Verified
+    # live 2026-07.
+    row_selector: "table.rates-table tr"
+    product_map:
+      "30 Year Fixed Loan":
+        loan_term_years: 30
+        is_fixed: true
+      "20 Year Fixed Loan":
+        loan_term_years: 20
+        is_fixed: true
+      "15 Year Fixed Loan":
+        loan_term_years: 15
+        is_fixed: true
+
+  sofi:
+    name: "SoFi Bank"
+    type: national
+    region: null
+    homepage: "https://www.sofi.com"
+    rates_url: "https://www.sofi.com/home-loans/mortgage-rates/"
+    enabled: true
+    # SoFi's page is a server-rendered React SPA -- rate/APR figures are
+    # embedded verbatim as JS object-literal props on inline `RateBox`
+    # component calls, not <table>/<tr> markup, so this uses a bespoke
+    # adapter (adapters/sofi.py) rather than HtmlTableLenderAdapter. Only
+    # 10/15/20/30yr fixed are published on this page -- FHA/VA/Jumbo link out
+    # to separate pages with no numeric rates on them. Verified live 2026-07.
+    product_map:
+      "10-year fixed":
+        loan_term_years: 10
+        is_fixed: true
+      "15-year fixed":
+        loan_term_years: 15
+        is_fixed: true
+      "20-year fixed":
+        loan_term_years: 20
+        is_fixed: true
+      "30-year fixed":
+        loan_term_years: 30
+        is_fixed: true
+
+  ranlife:
+    name: "RANLife Home Loans"
+    type: local
+    region: "UT"
+    homepage: "https://www.ranlife.com"
+    rates_url: "https://www.ranlife.com/rates_list.php"
+    enabled: true
+    # Real <table>, but Rate/APR cells are plain numbers with no literal '%'
+    # character, so this uses a bespoke adapter (adapters/ranlife.py) rather
+    # than HtmlTableLenderAdapter, which requires a '%' in the cell text. The
+    # page has 3 tables sharing the same class; the adapter scopes to the
+    # first ("Mortgage Program & Term" header) by header text, not position.
+    # "VA 30 IRRL Fixed" (refi-only) and "7/6 ARM" (published as N/A, no
+    # numbers yet) are intentionally left out of product_map. Verified live
+    # 2026-07.
+    product_map:
+      "FNMA 30 Year Fixed":
+        loan_term_years: 30
+        is_fixed: true
+      "FHA 30 Year Fixed":
+        loan_term_years: 30
+        is_fixed: true
+        is_fha: true
+      "VA 30 Year Fixed":
+        loan_term_years: 30
+        is_fixed: true
+        is_va: true
+      "USDA 30 Year Fixed":
+        loan_term_years: 30
+        is_fixed: true
+        is_usda: true
+
+  # Disabled: the one product homebuyers actually compare -- 15/20/30yr fixed
+  # First Mortgage -- is explicitly "Call 801-359-9600 for today's rates" in
+  # its own rate table, not a number. The only numeric rows on the page are
+  # niche products (5/7/10yr balloon, construction, lot loans, HELOC) not
+  # comparable to the primary products tracked for other lenders. Verified
+  # live 2026-07.
+  amufcu:
+    name: "American United Federal Credit Union"
+    type: local
+    region: "UT"
+    homepage: "https://www.amucu.org"
+    rates_url: "https://www.amucu.org/rates/"
+    enabled: false
+    product_map: {}
+
+  # Disabled: mortgage broker -- organized around branch/loan-officer pages,
+  # no centralized public rate table (homepage and every guessed rates path
+  # have zero '%'/APR/<table> content). Verified live 2026-07.
+  citywide:
+    name: "Citywide Home Mortgage"
+    type: national
+    region: null
+    homepage: "https://www.citywidehm.com"
+    rates_url: "https://www.citywidehm.com"
+    enabled: false
+    product_map: {}
+
+  # Disabled: mortgage broker -- organized around branch pages, no
+  # centralized public rate table (homepage and every guessed rates path
+  # have zero '%'/APR/<table> content, just "Apply Now" lead-capture CTAs).
+  # Verified live 2026-07.
+  veritas:
+    name: "Veritas Funding"
+    type: local
+    region: "UT"
+    homepage: "https://www.vfund.com"
+    rates_url: "https://www.vfund.com"
+    enabled: false
+    product_map: {}
+
+  # Disabled: mortgage broker -- no dedicated rates page found (guessed
+  # paths 404 through a catch-all), homepage is "Find a Loan Officer"
+  # oriented with no numeric rate content anywhere. Verified live 2026-07.
+  castlecooke:
+    name: "Castle & Cooke Mortgage"
+    type: national
+    region: null
+    homepage: "https://www.castlecookemortgage.com"
+    rates_url: "https://www.castlecookemortgage.com"
+    enabled: false
+    product_map: {}
+
+  # Disabled: mortgage broker -- the /mortgage-rates-arizona/ page that
+  # sounds like a rates page is actually a generic SEO/educational article
+  # about mortgage rates in general (no numbers), with "Find a Loan Officer"
+  # CTAs throughout. Verified live 2026-07.
+  sunamerican:
+    name: "Sun American Mortgage Company"
+    type: national
+    region: null
+    homepage: "https://sunamerican.com"
+    rates_url: "https://sunamerican.com/mortgage-rates-arizona/"
+    enabled: false
+    product_map: {}
+
+  # Disabled: mortgage broker/loan-officer network -- no rates page in the
+  # site nav or sitemap; guessed paths silently render the SPA's
+  # contact-page fallback rather than a real page. Verified live 2026-07.
+  cityfirst:
+    name: "City First Mortgage Services"
+    type: local
+    region: "UT"
+    homepage: "https://city1st.com"
+    rates_url: "https://city1st.com"
+    enabled: false
+    product_map: {}
+
+  # Disabled: mortgage broker -- the only "rates" page on the site is
+  # educational copy about how mortgage rates work, not a numeric rate
+  # table; their own "Rate Quote" flow routes to a loan officer instead.
+  # Verified live 2026-07.
+  crosscountry:
+    name: "CrossCountry Mortgage"
+    type: national
+    region: null
+    homepage: "https://crosscountrymortgage.com"
+    rates_url: "https://crosscountrymortgage.com/mortgage/buy-a-home/mortgage-interest-rates/"
+    enabled: false
+    product_map: {}
+
+  # Disabled: publishes public deposit/CD/savings rates but no consumer
+  # mortgage rate table -- every home-lending loan-option page (Conventional,
+  # FHA, VA, Jumbo, etc.) only offers a "Get a quote" link to an external
+  # lead-gen widget. Consistent with a correspondent/wholesale-heavy lending
+  # business model. Verified live 2026-07.
+  northpointe:
+    name: "Northpointe Bank"
+    type: national
+    region: null
+    homepage: "https://www.northpointe.com"
+    rates_url: "https://www.northpointe.com/home-lending/loan-options/"
+    enabled: false
+    product_map: {}
